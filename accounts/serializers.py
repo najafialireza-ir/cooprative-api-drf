@@ -2,6 +2,9 @@ from rest_framework import serializers
 from .models import User, Driver
 from rest_framework.exceptions import ValidationError
 from management.models import DriverCar, Car
+from rest_framework_simplejwt.tokens import RefreshToken
+from django.contrib import auth
+from rest_framework.exceptions import AuthenticationFailed
 
  
 class UserSerializer(serializers.ModelSerializer):
@@ -88,3 +91,49 @@ class DriverProfileSerializer(serializers.ModelSerializer):
             setattr(instance, key, value)
         instance.save()
         return instance
+
+
+class LoginSerializer(serializers.ModelSerializer):
+    email = serializers.EmailField(max_length=255)
+    password = serializers.CharField(max_length=50, write_only=True)
+    username = serializers.CharField(read_only=True)
+    tokens = serializers.CharField(read_only=True)
+    
+    class Meta:
+        model = User
+        fields = ('email', 'password', 'username', 'tokens')
+        
+    
+    def validate(self, attrs):
+        email = attrs.get('email', '')
+        password = attrs.get('password', '')
+        
+        user = auth.authenticate(email=email, password=password)
+        
+        if not user:
+            raise AuthenticationFailed('Invalid credentials, try again!')
+        
+        return {
+            'email':user.email,
+            'username': user.username,
+            'tokens': user.tokens
+        }
+        # return super().validate(attrs)
+    
+    
+class LogoutSerializer(serializers.Serializer):
+    refresh = serializers.CharField()
+    
+    default_error_messages = {
+        'Token_Error':('Token is expired not valid!')
+    }
+    
+    def validate(self, attrs):
+        self.token = attrs['refresh']
+        return attrs
+    
+    def save(self, **kwargs):
+        try:
+            RefreshToken(self.token).blacklist()
+        except:
+            self.fail('Token_Error')
