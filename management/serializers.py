@@ -24,8 +24,7 @@ class DriverCarSerializer(serializers.ModelSerializer):
         fields = ['id' ,'car','car_obj', 'driver_obj', 'car_production_date']
         read_only_fields = ['id', 'car_obj', 'driver_obj']
         
-    
-        
+           
 
 class CitySerializer(serializers.ModelSerializer):
     class Meta:

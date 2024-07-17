@@ -6,12 +6,18 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib import auth
 from rest_framework.exceptions import AuthenticationFailed
 
+class DriverCarSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DriverCar
+        fields = ('car', 'car_production_date')
+
  
 class UserSerializer(serializers.ModelSerializer):
+    driver_car = DriverCarSerializer(required=False, write_only=True)
     password2 = serializers.CharField(required=True, write_only=True)
     class Meta:
         model = User
-        fields = ('id' ,'username', 'email', 'user_type', 'password', 'password2')
+        fields = ('id' ,'username', 'email', 'user_type', 'password', 'password2', 'driver_car')
         extra_kwargs = {
             'password': {'write_only': True}
         }

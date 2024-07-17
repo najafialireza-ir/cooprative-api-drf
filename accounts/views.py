@@ -27,9 +27,11 @@ class UserRegisterView(CreateAPIView):
         if user_type == '1':
             user = User.objects.create_user(**validated_data)
         elif user_type == '2':
-            user = User.objects.create_driver(**validated_data)
-            
-            Driver.objects.create(user=user)
+            cd = validated_data
+            user = User.objects.create_driver(username=cd['username'], email=cd['email'], user_type=cd['user_type'], password=cd['password'])
+            driver = Driver.objects.create(user=user)
+            DriverCar.objects.create(driver=driver, car=cd.get('driver_car', {}).get('car', {}),
+                                     car_production_date=cd.get('driver_car', {}).get('car_production_date', {}))
         elif user_type == '3':
             user = User.objects.create_superuser(**validated_data)
         serializer.instance = user
@@ -128,7 +130,6 @@ class UserExportExcel(APIView):
     def get(self, request):
         response = HttpResponse(content_type='application/ms-excel')
         response['Content-Disposition'] = 'attachment; filename="users.xls"'
-
         wb = xlwt.Workbook(encoding='utf-8')
         ws = wb.add_sheet('Users')
 
