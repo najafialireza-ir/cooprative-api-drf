@@ -9,6 +9,10 @@ from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import viewsets      
 from rest_framework.exceptions import MethodNotAllowed
 from rest_framework.generics import GenericAPIView
+from rest_framework.views import APIView
+from django.http import HttpResponse
+import xlwt
+from rest_framework.permissions import IsAdminUser
 
 
 class UserRegisterView(CreateAPIView):
@@ -24,6 +28,7 @@ class UserRegisterView(CreateAPIView):
             user = User.objects.create_user(**validated_data)
         elif user_type == '2':
             user = User.objects.create_driver(**validated_data)
+            
             Driver.objects.create(user=user)
         elif user_type == '3':
             user = User.objects.create_superuser(**validated_data)
@@ -116,3 +121,39 @@ class UserLogoutView(GenericAPIView):
         
         return Response(status=status.HTTP_204_NO_CONTENT)
 
+
+class UserExportExcel(APIView):
+    permission_classes = [IsAdminUser]
+    
+    def get(self, request):
+        response = HttpResponse(content_type='application/ms-excel')
+        response['Content-Disposition'] = 'attachment; filename="users.xls"'
+
+        wb = xlwt.Workbook(encoding='utf-8')
+        ws = wb.add_sheet('Users')
+
+        # Sheet header, first row
+        row_num = 0
+
+        font_style = xlwt.XFStyle()
+        font_style.font.bold = True
+
+        columns = ['Username', 'Email address', 'UserType']
+
+        # start by index and row number
+        for col_num in range(len(columns)):
+            ws.write(row_num, col_num, columns[col_num], font_style)
+
+        # Sheet body, remaining rows
+        font_style = xlwt.XFStyle()
+
+        #convert to list and itrate
+        users = User.objects.all().values_list('username', 'email', 'user_type')
+        for row in users:
+            row_num += 1
+            for col_num in range(len(row)):
+                ws.write(row_num, col_num, row[col_num], font_style)
+
+        wb.save(response)
+        return response
+    

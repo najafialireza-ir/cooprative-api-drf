@@ -9,4 +9,6 @@ urlpatterns = [
     
     path('update/accept/<int:pk>/', views.TravelUpdateView.as_view({'patch': 'partial_update', 'delete': 'destroy'})),
     path('request/list/', views.TravelRequestListView.as_view()),
+    path('expert/excel/', views.TravelExportExcel.as_view()),
+    
 ]
